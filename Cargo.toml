@@ -10,9 +10,3 @@ license = "LGPL-3.0"
 links = "nitrokey"
 build = "build.rs"
 readme = "README.md"
-
-[dependencies]
-libc = "0.2"
-
-[build-dependencies]
-bindgen = "0.37.0"
