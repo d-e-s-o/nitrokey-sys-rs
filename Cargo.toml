@@ -6,7 +6,7 @@ homepage = "https://code.ireas.org/nitrokey-rs/"
 repository = "https://git.ireas.org/nitrokey-sys-rs/"
 description = "Low-level bindings to libnitrokey for communication with Nitrokey devices"
 categories = ["external-ffi-bindings"]
-license = "MIT"
+license = "LGPL-3.0"
 links = "nitrokey"
 build = "build.rs"
 
