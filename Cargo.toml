@@ -15,4 +15,4 @@ readme = "README.md"
 libc = "0.2"
 
 [build-dependencies]
-bindgen = "0.26.3"
+bindgen = "0.37.0"
