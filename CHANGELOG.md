@@ -7,6 +7,6 @@
 - Compile `libnitrokey` from source.
 - Generate the `bindgen` bindings statically and add them to the repository.
 
-# v0.1.0 (2018-05-20)
+# v0.1.0 (2018-05-19)
 
 - Initial release.
