@@ -7,7 +7,7 @@ fn main() {
     println!("cargo:rustc-link-lib=nitrokey");
 
     let bindings = bindgen::Builder::default()
-        .header("wrapper.h")
+        .header("libnitrokey-3.3/NK_C_API.h")
         .generate()
         .expect("Unable to generate bindings");
     let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());
