@@ -1,0 +1,17 @@
+[package]
+name = "nitrokey-sys"
+version = "0.1.0"
+authors = ["Robin Krahl <robin.krahl@ireas.org>"]
+homepage = "https://code.ireas.org/nitrokey-rs/"
+repository = "https://git.ireas.org/nitrokey-rs/"
+description = "Bindings to libnitrokey for communication with Nitrokey devices"
+categories = ["external-ffi-bindings"]
+license = "MIT"
+links = "nitrokey"
+build = "build.rs"
+
+[dependencies]
+libc = "0.2"
+
+[build-dependencies]
+bindgen = "0.26.3"
