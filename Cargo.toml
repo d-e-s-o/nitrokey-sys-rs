@@ -9,6 +9,7 @@ categories = ["external-ffi-bindings"]
 license = "LGPL-3.0"
 links = "nitrokey"
 build = "build.rs"
+readme = "README.md"
 
 [dependencies]
 libc = "0.2"
