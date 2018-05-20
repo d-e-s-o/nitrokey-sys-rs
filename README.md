@@ -8,8 +8,12 @@ devices.
 nitrokey-sys = "0.1.0"
 ```
 
-Currently, this crate requires a `libnitrokey` installation available in the
-default library and include path.
+The version of this crate corresponds to the wrapped `libnitrokey` version.
+This crate contains a copy of the `libnitrokey` library, builds it from source
+and links it statically.  The host system must provide its dependencies in the
+library search path:
+
+- `libhidapi-libusb0`
 
 ## Contact
 
