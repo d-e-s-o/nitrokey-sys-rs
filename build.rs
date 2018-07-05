@@ -12,7 +12,7 @@ fn main() {
         "log.cc",
         "misc.cc",
     ];
-    let library_dir = Path::new("libnitrokey-3.3");
+    let library_dir = Path::new("libnitrokey-v3.3");
 
     cc::Build::new()
         .cpp(true)
