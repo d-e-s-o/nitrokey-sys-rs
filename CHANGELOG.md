@@ -1,3 +1,7 @@
+# v3.4.1 (2018-12-10)
+
+- Update to libnitrokey 3.4.1.  There are no changes affecting this crate.
+
 # v3.4.0 (2018-12-10)
 
 - Update to libnitrokey 3.4, causing all following changes.

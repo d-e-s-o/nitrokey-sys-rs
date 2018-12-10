@@ -30,10 +30,14 @@ fn extract_git_version(pre: &str) -> Result<String, String> {
 fn get_version() -> Result<Version, String> {
     let major = env::var("CARGO_PKG_VERSION_MAJOR").map_err(stringify)?;
     let minor = env::var("CARGO_PKG_VERSION_MINOR").map_err(stringify)?;
+    let patch = env::var("CARGO_PKG_VERSION_PATCH").map_err(stringify)?;
     let pre = env::var("CARGO_PKG_VERSION_PRE").map_err(stringify)?;
 
     let git = match pre.is_empty() {
-        true => format!("v{}.{}", major, minor),
+        true => match patch.is_empty() {
+            true => format!("v{}.{}", major, minor),
+            false => format!("v{}.{}.{}", major, minor, patch),
+        },
         false => extract_git_version(&pre)?,
     };
 
