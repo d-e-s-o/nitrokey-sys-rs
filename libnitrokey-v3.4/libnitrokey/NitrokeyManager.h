@@ -65,6 +65,18 @@ char * strndup(const char* str, size_t maxlen);
         stick10::ReadSlot::ResponsePayload get_HOTP_slot_data(const uint8_t slot_number);
 
         bool set_time(uint64_t time);
+        /**
+         * Set the device time used for TOTP to the given time.  Contrary to
+         * {@code set_time(uint64_t)}, this command fails if {@code old_time}
+         * &gt; {@code time} or if {@code old_time} is zero (where {@code
+         * old_time} is the current time on the device).
+         *
+         * @param time new device time as Unix timestamp (seconds since
+         *        1970-01-01)
+         */
+        void set_time_soft(uint64_t time);
+
+        [[deprecated("get_time is deprecated -- use set_time_soft instead")]]
         bool get_time(uint64_t time = 0);
         bool erase_totp_slot(uint8_t slot_number, const char *temporary_password);
         bool erase_hotp_slot(uint8_t slot_number, const char *temporary_password);
@@ -93,8 +105,8 @@ char * strndup(const char* str, size_t maxlen);
         string get_status_as_string();
         string get_serial_number();
 
-        const char * get_totp_slot_name(uint8_t slot_number);
-        const char * get_hotp_slot_name(uint8_t slot_number);
+        char * get_totp_slot_name(uint8_t slot_number);
+        char * get_hotp_slot_name(uint8_t slot_number);
 
         void change_user_PIN(const char *current_PIN, const char *new_PIN);
         void change_admin_PIN(const char *current_PIN, const char *new_PIN);
@@ -108,9 +120,9 @@ char * strndup(const char* str, size_t maxlen);
 
         void lock_device();
 
-        const char *get_password_safe_slot_name(uint8_t slot_number);
-        const char *get_password_safe_slot_password(uint8_t slot_number);
-        const char *get_password_safe_slot_login(uint8_t slot_number);
+        char * get_password_safe_slot_name(uint8_t slot_number);
+        char * get_password_safe_slot_password(uint8_t slot_number);
+        char * get_password_safe_slot_login(uint8_t slot_number);
 
         void
     write_password_safe_slot(uint8_t slot_number, const char *slot_name, const char *slot_login,
@@ -187,10 +199,10 @@ char * strndup(const char* str, size_t maxlen);
 
         void send_startup(uint64_t seconds_from_epoch);
 
-        const char * get_status_storage_as_string();
+        char * get_status_storage_as_string();
         stick20::DeviceConfigurationResponsePacket::ResponsePayload get_status_storage();
 
-        const char *get_SD_usage_data_as_string();
+        char * get_SD_usage_data_as_string();
         std::pair<uint8_t,uint8_t> get_SD_usage_data();
 
 
@@ -227,7 +239,7 @@ char * strndup(const char* str, size_t maxlen);
         uint8_t get_internal_slot_number_for_hotp(uint8_t slot_number) const;
         uint8_t get_internal_slot_number_for_totp(uint8_t slot_number) const;
         bool erase_slot(uint8_t slot_number, const char *temporary_password);
-        const char * get_slot_name(uint8_t slot_number);
+        char * get_slot_name(uint8_t slot_number);
 
         template <typename ProCommand, PasswordKind StoKind>
         void change_PIN_general(const char *current_PIN, const char *new_PIN);
@@ -276,6 +288,13 @@ char * strndup(const char* str, size_t maxlen);
        * @return Returns true, if set unencrypted volume ro/rw pin type is User, false otherwise.
        */
       bool set_unencrypted_volume_rorw_pin_type_user();
+
+      /**
+       * Blink red and green LED alternatively and infinitely (until device is reconnected).
+       */
+      void wink();
+
+      stick20::ProductionTest::ResponsePayload production_info();
     };
 }
 

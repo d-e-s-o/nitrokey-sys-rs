@@ -1,6 +1,9 @@
 extern crate cc;
 
 use std::env;
+use std::io;
+use std::io::{Read, Write};
+use std::fs;
 use std::path;
 
 struct Version {
@@ -41,7 +44,34 @@ fn get_version() -> Result<Version, String> {
     })
 }
 
+fn prepare_version_source(
+    version: &Version,
+    out_path: &path::Path,
+    library_path: &path::Path
+) -> io::Result<path::PathBuf> {
+    let out = out_path.join("version.cc");
+    let template = library_path.join("version.cc.in");
+
+    let mut file = fs::File::open(template)?;
+    let mut data = String::new();
+    file.read_to_string(&mut data)?;
+    drop(file);
+
+    let data = data
+        .replace("@PROJECT_VERSION_MAJOR@", &version.major)
+        .replace("@PROJECT_VERSION_MINOR@", &version.minor)
+        .replace("@PROJECT_VERSION_GIT@", &version.git);
+
+    let mut file = fs::File::create(&out)?;
+    file.write_all(data.as_bytes())?;
+
+    Ok(out)
+}
+
 fn main() {
+    let out_dir = env::var("OUT_DIR").expect("Environment variable OUT_DIR is not set");
+    let out_path = path::PathBuf::from(out_dir);
+
     let version = get_version().expect("Could not extract library version");
 
     let sources = [
@@ -56,10 +86,14 @@ fn main() {
     let library_dir = format!("libnitrokey-{}", version.git);
     let library_path = path::Path::new(&library_dir);
 
+    let version_source = prepare_version_source(&version, &out_path, &library_path)
+        .expect("Could not prepare the version source file");
+
     cc::Build::new()
         .cpp(true)
         .include(library_path.join("libnitrokey"))
         .files(sources.iter().map(|s| library_path.join(s)))
+        .file(version_source)
         .compile("libnitrokey.a");
 
     println!("cargo:rustc-link-lib=hidapi-libusb");

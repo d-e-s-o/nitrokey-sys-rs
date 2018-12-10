@@ -21,10 +21,13 @@
 
 #include "NK_C_API.h"
 #include <iostream>
+#include <tuple>
 #include "libnitrokey/NitrokeyManager.h"
 #include <cstring>
 #include "libnitrokey/LibraryException.h"
 #include "libnitrokey/cxx_semantics.h"
+#include "libnitrokey/stick20_commands.h"
+#include "version.h"
 
 #ifdef _MSC_VER
 #ifdef _WIN32
@@ -52,11 +55,11 @@ T* duplicate_vector_and_clear(std::vector<T> &v){
     return d;
 }
 
-template <typename T>
-uint8_t * get_with_array_result(T func){
+template <typename R, typename T>
+std::tuple<int, R> get_with_status(T func, R fallback) {
     NK_last_command_status = 0;
     try {
-        return func();
+        return std::make_tuple(0, func());
     }
     catch (CommandFailedException & commandFailedException){
         NK_last_command_status = commandFailedException.last_command_status;
@@ -67,43 +70,26 @@ uint8_t * get_with_array_result(T func){
     catch (const DeviceCommunicationException &deviceException){
       NK_last_command_status = 256-deviceException.getType();
     }
-    return nullptr;
+    return std::make_tuple(NK_last_command_status, fallback);
 }
 
 template <typename T>
-const char* get_with_string_result(T func){
-    NK_last_command_status = 0;
-    try {
-        return func();
+uint8_t * get_with_array_result(T func){
+    return std::get<1>(get_with_status<uint8_t*>(func, nullptr));
+}
+
+template <typename T>
+char* get_with_string_result(T func){
+    auto result = std::get<1>(get_with_status<char*>(func, nullptr));
+    if (result == nullptr) {
+        return strndup("", MAXIMUM_STR_REPLY_LENGTH);
     }
-    catch (CommandFailedException & commandFailedException){
-        NK_last_command_status = commandFailedException.last_command_status;
-    }
-    catch (LibraryException & libraryException){
-        NK_last_command_status = libraryException.exception_id();
-    }
-    catch (const DeviceCommunicationException &deviceException){
-      NK_last_command_status = 256-deviceException.getType();
-    }
-    return "";
+    return result;
 }
 
 template <typename T>
 auto get_with_result(T func){
-    NK_last_command_status = 0;
-    try {
-        return func();
-    }
-    catch (CommandFailedException & commandFailedException){
-        NK_last_command_status = commandFailedException.last_command_status;
-    }
-    catch (LibraryException & libraryException){
-        NK_last_command_status = libraryException.exception_id();
-    }
-    catch (const DeviceCommunicationException &deviceException){
-      NK_last_command_status = 256-deviceException.getType();
-    }
-    return static_cast<decltype(func())>(0);
+    return std::get<1>(get_with_status(func, static_cast<decltype(func())>(0)));
 }
 
 template <typename T>
@@ -170,6 +156,7 @@ extern "C" {
                     case NK_STORAGE:
                         model_string = "S";
                         break;
+                    case NK_DISCONNECTED:
                     default:
                         /* no such enum value -- return error code */
                         return 0;
@@ -238,22 +225,41 @@ extern "C" {
 	}
 
 
+	NK_C_API enum NK_device_model NK_get_device_model() {
+		auto m = NitrokeyManager::instance();
+		try {
+			auto model = m->get_connected_device_model();
+			switch (model) {
+				case DeviceModel::PRO:
+				    return NK_PRO;
+				case DeviceModel::STORAGE:
+				    return NK_STORAGE;
+				default:
+				    /* unknown or not connected device */
+				    return NK_device_model::NK_DISCONNECTED;
+			}
+		} catch (const DeviceNotConnected& e) {
+			return NK_device_model::NK_DISCONNECTED;
+		}
+}
+
+
 	void clear_string(std::string &s) {
 		std::fill(s.begin(), s.end(), ' ');
 	}
 
 
-	NK_C_API const char * NK_status() {
+	NK_C_API char * NK_status() {
 		auto m = NitrokeyManager::instance();
 		return get_with_string_result([&]() {
 			string && s = m->get_status_as_string();
-			char * rs = strndup(s.c_str(), max_string_field_length);
+			char * rs = strndup(s.c_str(), MAXIMUM_STR_REPLY_LENGTH);
 			clear_string(s);
 			return rs;
 		});
 	}
 
-	NK_C_API const char * NK_device_serial_number() {
+	NK_C_API char * NK_device_serial_number() {
 		auto m = NitrokeyManager::instance();
 		return get_with_string_result([&]() {
 			string && s = m->get_serial_number();
@@ -263,11 +269,11 @@ extern "C" {
 		});
 	}
 
-	NK_C_API const char * NK_get_hotp_code(uint8_t slot_number) {
+	NK_C_API char * NK_get_hotp_code(uint8_t slot_number) {
 		return NK_get_hotp_code_PIN(slot_number, "");
 	}
 
-	NK_C_API const char * NK_get_hotp_code_PIN(uint8_t slot_number, const char *user_temporary_password) {
+	NK_C_API char * NK_get_hotp_code_PIN(uint8_t slot_number, const char *user_temporary_password) {
 		auto m = NitrokeyManager::instance();
 		return get_with_string_result([&]() {
 			string && s = m->get_HOTP_code(slot_number, user_temporary_password);
@@ -277,12 +283,12 @@ extern "C" {
 		});
 	}
 
-	NK_C_API const char * NK_get_totp_code(uint8_t slot_number, uint64_t challenge, uint64_t last_totp_time,
+	NK_C_API char * NK_get_totp_code(uint8_t slot_number, uint64_t challenge, uint64_t last_totp_time,
 		uint8_t last_interval) {
 		return NK_get_totp_code_PIN(slot_number, challenge, last_totp_time, last_interval, "");
 	}
 
-	NK_C_API const char * NK_get_totp_code_PIN(uint8_t slot_number, uint64_t challenge, uint64_t last_totp_time,
+	NK_C_API char * NK_get_totp_code_PIN(uint8_t slot_number, uint64_t challenge, uint64_t last_totp_time,
 		uint8_t last_interval, const char *user_temporary_password) {
 		auto m = NitrokeyManager::instance();
 		return get_with_string_result([&]() {
@@ -327,14 +333,14 @@ extern "C" {
 		});
 	}
 
-	NK_C_API const char* NK_get_totp_slot_name(uint8_t slot_number) {
+	NK_C_API char* NK_get_totp_slot_name(uint8_t slot_number) {
 		auto m = NitrokeyManager::instance();
 		return get_with_string_result([&]() {
 			const auto slot_name = m->get_totp_slot_name(slot_number);
 			return slot_name;
 		});
 	}
-	NK_C_API const char* NK_get_hotp_slot_name(uint8_t slot_number) {
+	NK_C_API char* NK_get_hotp_slot_name(uint8_t slot_number) {
 		auto m = NitrokeyManager::instance();
 		return get_with_string_result([&]() {
 			const auto slot_name = m->get_hotp_slot_name(slot_number);
@@ -353,6 +359,18 @@ extern "C" {
 		m->set_loglevel(level);
 	}
 
+	NK_C_API unsigned int NK_get_major_library_version() {
+		return get_major_library_version();
+	}
+
+	NK_C_API unsigned int NK_get_minor_library_version() {
+		return get_minor_library_version();
+	}
+
+	NK_C_API const char* NK_get_library_version() {
+		return get_library_version();
+	}
+
 	NK_C_API int NK_totp_set_time(uint64_t time) {
 		auto m = NitrokeyManager::instance();
 		return get_without_result([&]() {
@@ -360,11 +378,15 @@ extern "C" {
 		});
 	}
 
-	NK_C_API int NK_totp_get_time() {
+	NK_C_API int NK_totp_set_time_soft(uint64_t time) {
 		auto m = NitrokeyManager::instance();
 		return get_without_result([&]() {
-			m->get_time(0); // FIXME check how that should work
+			m->set_time_soft(time);
 		});
+        }
+
+	NK_C_API int NK_totp_get_time() {
+	  return 0;
 	}
 
 	NK_C_API int NK_change_admin_PIN(const char *current_PIN, const char *new_PIN) {
@@ -417,20 +439,20 @@ extern "C" {
 		});
 	}
 
-	NK_C_API const char *NK_get_password_safe_slot_name(uint8_t slot_number) {
+	NK_C_API char *NK_get_password_safe_slot_name(uint8_t slot_number) {
 		auto m = NitrokeyManager::instance();
 		return get_with_string_result([&]() {
 			return m->get_password_safe_slot_name(slot_number);
 		});
 	}
 
-	NK_C_API const char *NK_get_password_safe_slot_login(uint8_t slot_number) {
+	NK_C_API char *NK_get_password_safe_slot_login(uint8_t slot_number) {
 		auto m = NitrokeyManager::instance();
 		return get_with_string_result([&]() {
 			return m->get_password_safe_slot_login(slot_number);
 		});
 	}
-	NK_C_API const char *NK_get_password_safe_slot_password(uint8_t slot_number) {
+	NK_C_API char *NK_get_password_safe_slot_password(uint8_t slot_number) {
 		auto m = NitrokeyManager::instance();
 		return get_with_string_result([&]() {
 			return m->get_password_safe_slot_password(slot_number);
@@ -589,14 +611,84 @@ extern "C" {
 		});
 	}
 
-	NK_C_API const char* NK_get_status_storage_as_string() {
+	NK_C_API char* NK_get_status_storage_as_string() {
 		auto m = NitrokeyManager::instance();
 		return get_with_string_result([&]() {
 			return m->get_status_storage_as_string();
 		});
 	}
 
-	NK_C_API const char* NK_get_SD_usage_data_as_string() {
+	NK_C_API int NK_get_status_storage(NK_storage_status* out) {
+		if (out == nullptr) {
+			return -1;
+		}
+		auto m = NitrokeyManager::instance();
+		auto result = get_with_status([&]() {
+			return m->get_status_storage();
+		}, proto::stick20::DeviceConfigurationResponsePacket::ResponsePayload());
+		auto error_code = std::get<0>(result);
+		if (error_code != 0) {
+			return error_code;
+		}
+
+		auto status = std::get<1>(result);
+		out->unencrypted_volume_read_only = status.ReadWriteFlagUncryptedVolume_u8 != 0;
+		out->unencrypted_volume_active = status.VolumeActiceFlag_st.unencrypted;
+		out->encrypted_volume_read_only = status.ReadWriteFlagCryptedVolume_u8 != 0;
+		out->encrypted_volume_active = status.VolumeActiceFlag_st.encrypted;
+		out->hidden_volume_read_only = status.ReadWriteFlagHiddenVolume_u8 != 0;
+		out->hidden_volume_active = status.VolumeActiceFlag_st.hidden;
+		out->firmware_version_major = status.versionInfo.major;
+		out->firmware_version_minor = status.versionInfo.minor;
+		out->firmware_locked = status.FirmwareLocked_u8 != 0;
+		out->serial_number_sd_card = status.ActiveSD_CardID_u32;
+		out->serial_number_smart_card = status.ActiveSmartCardID_u32;
+		out->user_retry_count = status.UserPwRetryCount;
+		out->admin_retry_count = status.AdminPwRetryCount;
+		out->new_sd_card_found = status.NewSDCardFound_st.NewCard;
+		out->filled_with_random = (status.SDFillWithRandomChars_u8 & 0x01) != 0;
+		out->stick_initialized = status.StickKeysNotInitiated == 0;
+		return 0;
+	}
+
+  NK_C_API int NK_get_storage_production_info(NK_storage_ProductionTest * out){
+    if (out == nullptr) {
+      return -1;
+    }
+    auto m = NitrokeyManager::instance();
+    auto result = get_with_status([&]() {
+      return m->production_info();
+    }, proto::stick20::ProductionTest::ResponsePayload());
+
+		auto error_code = std::get<0>(result);
+		if (error_code != 0) {
+			return error_code;
+		}
+
+		stick20::ProductionTest::ResponsePayload status = std::get<1>(result);
+		// Cannot use memcpy without declaring C API struct packed
+    // (which is not parsed by Python's CFFI apparently), hence the manual way.
+#define a(x) out->x = status.x;
+		 a(FirmwareVersion_au8[0]);
+		 a(FirmwareVersion_au8[1]);
+		 a(FirmwareVersionInternal_u8);
+		 a(SD_Card_Size_u8);
+		 a(CPU_CardID_u32);
+		 a(SmartCardID_u32);
+		 a(SD_CardID_u32);
+		 a(SC_UserPwRetryCount);
+		 a(SC_AdminPwRetryCount);
+		 a(SD_Card_ManufacturingYear_u8);
+		 a(SD_Card_ManufacturingMonth_u8);
+		 a(SD_Card_OEM_u16);
+		 a(SD_WriteSpeed_u16);
+		 a(SD_Card_Manufacturer_u8);
+#undef a
+		return 0;
+  }
+
+
+NK_C_API char* NK_get_SD_usage_data_as_string() {
 		auto m = NitrokeyManager::instance();
 		return get_with_string_result([&]() {
 			return m->get_SD_usage_data_as_string();
@@ -631,7 +723,7 @@ extern "C" {
 		});
 	}
 
-	NK_C_API const char* NK_list_devices_by_cpuID() {
+	NK_C_API char* NK_list_devices_by_cpuID() {
 		auto nm = NitrokeyManager::instance();
 		return get_with_string_result([&]() {
 			auto v = nm->list_devices_by_cpuID();
@@ -640,7 +732,7 @@ extern "C" {
 				res += a+";";
 			}
 			if (res.size()>0) res.pop_back(); // remove last delimiter char
-			return strndup(res.c_str(), 8192); //this buffer size sets limit to over 200 devices ID's
+			return strndup(res.c_str(), MAXIMUM_STR_REPLY_LENGTH);
 		});
 	}
 
@@ -651,7 +743,12 @@ extern "C" {
 		});
 	}
 
-
+	NK_C_API int NK_wink() {
+		auto m = NitrokeyManager::instance();
+		return get_without_result([&]() {
+			return m->wink();
+		});
+	}
 
 #ifdef __cplusplus
 }

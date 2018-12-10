@@ -5,7 +5,7 @@ devices.
 
 ```toml
 [dependencies]
-nitrokey-sys = "3.3.0"
+nitrokey-sys = "3.4.0"
 ```
 
 The version of this crate corresponds to the wrapped `libnitrokey` version.

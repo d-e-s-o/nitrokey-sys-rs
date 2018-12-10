@@ -25,41 +25,160 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "deprecated.h"
+
 #ifdef _MSC_VER
 #define NK_C_API __declspec(dllexport)
 #else
-#define NK_C_API 
+#define NK_C_API
 #endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+  static const int MAXIMUM_STR_REPLY_LENGTH = 8192;
+
         /**
          * The Nitrokey device models supported by the API.
          */
         enum NK_device_model {
+						/**
+						 * Use, if no supported device is connected
+						 */
+        		NK_DISCONNECTED = 0,
             /**
              * Nitrokey Pro.
              */
-            NK_PRO,
+            NK_PRO = 1,
             /**
              * Nitrokey Storage.
              */
-            NK_STORAGE
+            NK_STORAGE = 2
         };
 
 	/**
-	 * Set debug level of messages written on stderr
-	 * @param state state=True - most messages, state=False - only errors level
+	 * Stores the status of a Storage device.
 	 */
+        struct NK_storage_status {
+		/**
+		 * Indicates whether the unencrypted volume is read-only.
+		 */
+		bool unencrypted_volume_read_only;
+		/**
+		 * Indicates whether the unencrypted volume is active.
+		 */
+		bool unencrypted_volume_active;
+		/**
+		 * Indicates whether the encrypted volume is read-only.
+		 */
+		bool encrypted_volume_read_only;
+		/**
+		 * Indicates whether the encrypted volume is active.
+		 */
+		bool encrypted_volume_active;
+		/**
+		 * Indicates whether the hidden volume is read-only.
+		 */
+		bool hidden_volume_read_only;
+		/**
+		 * Indicates whether the hidden volume is active.
+		 */
+		bool hidden_volume_active;
+		/**
+		 * The major firmware version, e. g. 0 in v0.40.
+		 */
+		uint8_t firmware_version_major;
+		/**
+		 * The minor firmware version, e. g. 40 in v0.40.
+		 */
+		uint8_t firmware_version_minor;
+		/**
+		 * Indicates whether the firmware is locked.
+		 */
+		bool firmware_locked;
+		/**
+		 * The serial number of the SD card in the Storage stick.
+		 */
+		uint32_t serial_number_sd_card;
+		/**
+		 * The serial number of the smart card in the Storage stick.
+		 */
+		uint32_t serial_number_smart_card;
+		/**
+		 * The number of remaining login attempts for the user PIN.
+		 */
+		uint8_t user_retry_count;
+		/**
+		 * The number of remaining login attempts for the admin PIN.
+		 */
+		uint8_t admin_retry_count;
+		/**
+		 * Indicates whether a new SD card was found.
+		 */
+		bool new_sd_card_found;
+		/**
+		 * Indicates whether the SD card is filled with random characters.
+		 */
+		bool filled_with_random;
+		/**
+		 * Indicates whether the stick has been initialized by generating
+		 * the AES keys.
+		 */
+		bool stick_initialized;
+        };
+
+   struct NK_storage_ProductionTest{
+    uint8_t FirmwareVersion_au8[2];
+    uint8_t FirmwareVersionInternal_u8;
+    uint8_t SD_Card_Size_u8;
+    uint32_t CPU_CardID_u32;
+    uint32_t SmartCardID_u32;
+    uint32_t SD_CardID_u32;
+    uint8_t SC_UserPwRetryCount;
+    uint8_t SC_AdminPwRetryCount;
+    uint8_t SD_Card_ManufacturingYear_u8;
+    uint8_t SD_Card_ManufacturingMonth_u8;
+    uint16_t SD_Card_OEM_u16;
+    uint16_t SD_WriteSpeed_u16;
+    uint8_t SD_Card_Manufacturer_u8;
+  };
+
+  NK_C_API int NK_get_storage_production_info(struct NK_storage_ProductionTest * out);
+
+
+/**
+ * Set debug level of messages written on stderr
+ * @param state state=True - most messages, state=False - only errors level
+ */
 	NK_C_API void NK_set_debug(bool state);
 
 	/**
 	 * Set debug level of messages written on stderr
 	 * @param level (int) 0-lowest verbosity, 5-highest verbosity
 	 */
-  NK_C_API void NK_set_debug_level(const int level);
+	NK_C_API void NK_set_debug_level(const int level);
+
+	/**
+	 * Get the major library version, e. g. the 3 in v3.2.
+	 * @return the major library version
+	 */
+	NK_C_API unsigned int NK_get_major_library_version();
+
+	/**
+	 * Get the minor library version, e. g. the 2 in v3.2.
+	 * @return the minor library version
+	 */
+	NK_C_API unsigned int NK_get_minor_library_version();
+
+	/**
+	 * Get the library version as a string.  This is the output of
+	 * `git describe --always` at compile time, for example "v3.3" or
+	 * "v3.3-19-gaee920b".
+	 * The return value is a string literal and must not be freed.
+	 * @return the library version as a string
+	 */
+	NK_C_API const char* NK_get_library_version();
 
 	/**
 	 * Connect to device of given model. Currently library can be connected only to one device at once.
@@ -88,16 +207,24 @@ extern "C" {
 	NK_C_API int NK_logout();
 
 	/**
+	 * Query the model of the connected device.
+	 * Returns the model of the connected device or NK_DISCONNECTED.
+	 *
+	 * @return true if a device is connected and the out argument has been set
+	 */
+	NK_C_API enum NK_device_model NK_get_device_model();
+
+	/**
 	 * Return the debug status string. Debug purposes.
 	 * @return command processing error code
 	 */
-	NK_C_API const char * NK_status();
+	NK_C_API char * NK_status();
 
 	/**
 	 * Return the device's serial number string in hex.
 	 * @return string device's serial number in hex
 	 */
-	NK_C_API const char * NK_device_serial_number();
+	NK_C_API char * NK_device_serial_number();
 
 	/**
 	 * Get last command processing status. Useful for commands which returns the results of their own and could not return
@@ -114,37 +241,37 @@ extern "C" {
 
 	/**
 	 * Authenticates the user on USER privilages with user_password and sets user's temporary password on device to user_temporary_password.
-	 * @param user_password char[25](Pro) current user password
-	 * @param user_temporary_password char[25](Pro) user temporary password to be set on device for further communication (authentication command)
+	 * @param user_password char[25] current user password
+	 * @param user_temporary_password char[25] user temporary password to be set on device for further communication (authentication command)
 	 * @return command processing error code
 	 */
 	NK_C_API int NK_user_authenticate(const char* user_password, const char* user_temporary_password);
 
 	/**
 	 * Authenticates the user on ADMIN privilages with admin_password and sets user's temporary password on device to admin_temporary_password.
-	 * @param admin_password char[25](Pro) current administrator PIN
-	 * @param admin_temporary_password char[25](Pro) admin temporary password to be set on device for further communication (authentication command)
+	 * @param admin_password char[25] current administrator PIN
+	 * @param admin_temporary_password char[25] admin temporary password to be set on device for further communication (authentication command)
 	 * @return command processing error code
 	 */
 	NK_C_API int NK_first_authenticate(const char* admin_password, const char* admin_temporary_password);
 
 	/**
 	 * Execute a factory reset.
-	 * @param admin_password char[20](Pro) current administrator PIN
+	 * @param admin_password char[20] current administrator PIN
 	 * @return command processing error code
 	 */
 	NK_C_API int NK_factory_reset(const char* admin_password);
 
 	/**
 	 * Generates AES key on the device
-	 * @param admin_password char[20](Pro) current administrator PIN
+	 * @param admin_password char[20] current administrator PIN
 	 * @return command processing error code
 	 */
 	NK_C_API int NK_build_aes_key(const char* admin_password);
 
 	/**
 	 * Unlock user PIN locked after 3 incorrect codes tries.
-	 * @param admin_password char[20](Pro) current administrator PIN
+	 * @param admin_password char[20] current administrator PIN
 	 * @return command processing error code
 	 */
 	NK_C_API int NK_unlock_user_password(const char *admin_password, const char *new_user_password);
@@ -181,16 +308,16 @@ extern "C" {
 	/**
 	 * Get name of given TOTP slot
 	 * @param slot_number TOTP slot number, slot_number<15
-	 * @return char[20](Pro) the name of the slot
+	 * @return char[20] the name of the slot
 	 */
-	NK_C_API const char * NK_get_totp_slot_name(uint8_t slot_number);
+	NK_C_API char * NK_get_totp_slot_name(uint8_t slot_number);
 
 	/**
 	 *
 	 * @param slot_number HOTP slot number, slot_number<3
-	 * @return char[20](Pro) the name of the slot
+	 * @return char[20] the name of the slot
 	 */
-	NK_C_API const char * NK_get_hotp_slot_name(uint8_t slot_number);
+	NK_C_API char * NK_get_hotp_slot_name(uint8_t slot_number);
 
 	/**
 	 * Erase HOTP slot data from the device
@@ -210,15 +337,16 @@ extern "C" {
 
 	/**
 	 * Write HOTP slot data to the device
-	 * @param slot_number HOTP slot number, slot_number<3
-	 * @param slot_name char[15](Pro) desired slot name
-	 * @param secret char[20](Pro) 160-bit secret
+	 * @param slot_number HOTP slot number, slot_number<3, 0-numbered
+	 * @param slot_name char[15] desired slot name. C string (requires ending '\0'; 16 bytes).
+	 * @param secret char[40] 160-bit or 320-bit (currently Pro v0.8 only) secret as a hex string. C string (requires ending '\0'; 41 bytes).
+	 * See NitrokeyManager::is_320_OTP_secret_supported.
 	 * @param hotp_counter uint32_t starting value of HOTP counter
 	 * @param use_8_digits should returned codes be 6 (false) or 8 digits (true)
 	 * @param use_enter press ENTER key after sending OTP code using double-pressed scroll/num/capslock
 	 * @param use_tokenID @see token_ID
 	 * @param token_ID @see https://openauthentication.org/token-specs/, 'Class A' section
-	 * @param temporary_password char[25](Pro) admin temporary password
+	 * @param temporary_password char[25] admin temporary password
 	 * @return command processing error code
 	 */
 	NK_C_API int NK_write_hotp_slot(uint8_t slot_number, const char *slot_name, const char *secret, uint64_t hotp_counter,
@@ -227,15 +355,16 @@ extern "C" {
 
 	/**
 	 * Write TOTP slot data to the device
-	 * @param slot_number TOTP slot number, slot_number<15
-	 * @param slot_name char[15](Pro) desired slot name
-	 * @param secret char[20](Pro) 160-bit secret
+	 * @param slot_number TOTP slot number, slot_number<15, 0-numbered
+	 * @param slot_name char[15] desired slot name. C string (requires ending '\0'; 16 bytes).
+	 * @param secret char[40] 160-bit or 320-bit (currently Pro v0.8 only) secret as a hex string. C string (requires ending '\0'; 41 bytes).
+	 * See NitrokeyManager::is_320_OTP_secret_supported.
 	 * @param time_window uint16_t time window for this TOTP
 	 * @param use_8_digits should returned codes be 6 (false) or 8 digits (true)
 	 * @param use_enter press ENTER key after sending OTP code using double-pressed scroll/num/capslock
 	 * @param use_tokenID @see token_ID
 	 * @param token_ID @see https://openauthentication.org/token-specs/, 'Class A' section
-	 * @param temporary_password char[20](Pro) admin temporary password
+	 * @param temporary_password char[20] admin temporary password
 	 * @return command processing error code
 	 */
 	NK_C_API int NK_write_totp_slot(uint8_t slot_number, const char *slot_name, const char *secret, uint16_t time_window,
@@ -247,39 +376,39 @@ extern "C" {
 	 * @param slot_number HOTP slot number, slot_number<3
 	 * @return HOTP code
 	 */
-	NK_C_API const char * NK_get_hotp_code(uint8_t slot_number);
+	NK_C_API char * NK_get_hotp_code(uint8_t slot_number);
 
 	/**
 	 * Get HOTP code from the device (PIN protected)
 	 * @param slot_number HOTP slot number, slot_number<3
-	 * @param user_temporary_password char[25](Pro) user temporary password if PIN protected OTP codes are enabled,
+	 * @param user_temporary_password char[25] user temporary password if PIN protected OTP codes are enabled,
 	 * otherwise should be set to empty string - ''
 	 * @return HOTP code
 	 */
-	NK_C_API const char * NK_get_hotp_code_PIN(uint8_t slot_number, const char *user_temporary_password);
+	NK_C_API char * NK_get_hotp_code_PIN(uint8_t slot_number, const char *user_temporary_password);
 
 	/**
 	 * Get TOTP code from the device
 	 * @param slot_number TOTP slot number, slot_number<15
-	 * @param challenge TOTP challenge
-	 * @param last_totp_time last time
-	 * @param last_interval last interval
+	 * @param challenge TOTP challenge -- unused
+	 * @param last_totp_time last time -- unused
+	 * @param last_interval last interval --unused
 	 * @return TOTP code
 	 */
-	NK_C_API const char * NK_get_totp_code(uint8_t slot_number, uint64_t challenge, uint64_t last_totp_time,
+	NK_C_API char * NK_get_totp_code(uint8_t slot_number, uint64_t challenge, uint64_t last_totp_time,
 		uint8_t last_interval);
 
 	/**
 	 * Get TOTP code from the device (PIN protected)
 	 * @param slot_number TOTP slot number, slot_number<15
-	 * @param challenge TOTP challenge
-	 * @param last_totp_time last time
-	 * @param last_interval last interval
-	 * @param user_temporary_password char[25](Pro) user temporary password if PIN protected OTP codes are enabled,
+	 * @param challenge TOTP challenge -- unused
+	 * @param last_totp_time last time -- unused
+	 * @param last_interval last interval -- unused
+	 * @param user_temporary_password char[25] user temporary password if PIN protected OTP codes are enabled,
 	 * otherwise should be set to empty string - ''
 	 * @return TOTP code
 	 */
-	NK_C_API const char * NK_get_totp_code_PIN(uint8_t slot_number, uint64_t challenge,
+	NK_C_API char * NK_get_totp_code_PIN(uint8_t slot_number, uint64_t challenge,
 		uint64_t last_totp_time, uint8_t last_interval,
 		const char *user_temporary_password);
 
@@ -290,21 +419,35 @@ extern "C" {
 	 */
 	NK_C_API int NK_totp_set_time(uint64_t time);
 
+	/**
+	 * Set the device time used for TOTP to the given time.  Contrary to
+	 * {@code set_time(uint64_t)}, this command fails if {@code old_time}
+	 * &gt; {@code time} or if {@code old_time} is zero (where {@code
+	 * old_time} is the current time on the device).
+	 *
+	 * @param time new device time as Unix timestamp (seconds since
+	 *        1970-01-01)
+	 * @return command processing error code
+	 */
+	NK_C_API int NK_totp_set_time_soft(uint64_t time);
+
+	// NK_totp_get_time is deprecated -- use NK_totp_set_time_soft instead
+	DEPRECATED
 	NK_C_API int NK_totp_get_time();
 
 	//passwords
 	/**
 	 * Change administrator PIN
-	 * @param current_PIN char[25](Pro) current PIN
-	 * @param new_PIN char[25](Pro) new PIN
+	 * @param current_PIN char[25] current PIN
+	 * @param new_PIN char[25] new PIN
 	 * @return command processing error code
 	 */
 	NK_C_API int NK_change_admin_PIN(const char *current_PIN, const char *new_PIN);
 
 	/**
 	 * Change user PIN
-	 * @param current_PIN char[25](Pro) current PIN
-	 * @param new_PIN char[25](Pro) new PIN
+	 * @param current_PIN char[25] current PIN
+	 * @param new_PIN char[25] new PIN
 	 * @return command processing error code
 	*/
 	NK_C_API int NK_change_user_PIN(const char *current_PIN, const char *new_PIN);
@@ -325,7 +468,7 @@ extern "C" {
 
 	/**
 	 * Enable password safe access
-	 * @param user_pin char[30](Pro) current user PIN
+	 * @param user_pin char[30] current user PIN
 	 * @return command processing error code
 	 */
 	NK_C_API int NK_enable_password_safe(const char *user_pin);
@@ -341,28 +484,28 @@ extern "C" {
 	 * @param slot_number password safe slot number, slot_number<16
 	 * @return slot name
 	 */
-	NK_C_API const char *NK_get_password_safe_slot_name(uint8_t slot_number);
+	NK_C_API char *NK_get_password_safe_slot_name(uint8_t slot_number);
 
 	/**
 	 * Get password safe slot login
 	 * @param slot_number password safe slot number, slot_number<16
 	 * @return login from the PWS slot
 	 */
-	NK_C_API const char *NK_get_password_safe_slot_login(uint8_t slot_number);
+	NK_C_API char *NK_get_password_safe_slot_login(uint8_t slot_number);
 
 	/**
 	 * Get the password safe slot password
 	 * @param slot_number password safe slot number, slot_number<16
 	 * @return password from the PWS slot
 	 */
-	NK_C_API const char *NK_get_password_safe_slot_password(uint8_t slot_number);
+	NK_C_API char *NK_get_password_safe_slot_password(uint8_t slot_number);
 
 	/**
 	 * Write password safe data to the slot
 	 * @param slot_number password safe slot number, slot_number<16
-	 * @param slot_name char[11](Pro) name of the slot
-	 * @param slot_login char[32](Pro) login string
-	 * @param slot_password char[20](Pro) password string
+	 * @param slot_name char[11] name of the slot
+	 * @param slot_login char[32] login string
+	 * @param slot_password char[20] password string
 	 * @return command processing error code
 	 */
 	NK_C_API int NK_write_password_safe_slot(uint8_t slot_number, const char *slot_name,
@@ -580,7 +723,18 @@ extern "C" {
 	 * Storage only
 	 * @return string with devices attributes
 	 */
-	NK_C_API const char* NK_get_status_storage_as_string();
+	NK_C_API char* NK_get_status_storage_as_string();
+
+	/**
+	 * Get the Storage stick status and return the command processing
+	 * error code.  If the code is zero, i. e. the command was successful,
+	 * the storage status is written to the output pointer's target.
+	 * The output pointer must not be null.
+	 *
+	 * @param out the output pointer for the storage status
+	 * @return command processing error code
+	 */
+	NK_C_API int NK_get_status_storage(struct NK_storage_status* out);
 
 	/**
 	 * Get SD card usage attributes as string.
@@ -588,7 +742,7 @@ extern "C" {
 	 * Storage only
 	 * @return string with SD card usage attributes
 	 */
-	NK_C_API const char* NK_get_SD_usage_data_as_string();
+	NK_C_API char* NK_get_SD_usage_data_as_string();
 
 	/**
 	 * Get progress value of current long operation.
@@ -612,7 +766,7 @@ extern "C" {
  * @example Example of returned data: '00005d19:dacc2cb4_p_0001:0010:02;000037c7:4cf12445_p_0001:000f:02;0001:000c:02'
  * @return string delimited id's of connected devices
  */
-	NK_C_API const char* NK_list_devices_by_cpuID();
+	NK_C_API char* NK_list_devices_by_cpuID();
 
 
 /**
@@ -625,7 +779,11 @@ extern "C" {
  */
 	NK_C_API int NK_connect_with_ID(const char* id);
 
-
+	/**
+	 * Blink red and green LED alternatively and infinitely (until device is reconnected).
+	 * @return command processing error code
+	 */
+	NK_C_API int NK_wink();
 
 #ifdef __cplusplus
 }
