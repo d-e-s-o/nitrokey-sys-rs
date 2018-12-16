@@ -4,7 +4,7 @@
 
 mod ffi;
 
-pub use ffi::*;
+pub use crate::ffi::*;
 
 #[cfg(test)]
 mod tests {
