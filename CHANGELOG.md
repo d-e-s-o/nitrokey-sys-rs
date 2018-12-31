@@ -1,5 +1,7 @@
 # Unreleased
 - Use the -std=c++14 compiler flag.
+- Change the build script to link to `-lhidapi` on non-Linux operating systems
+  (while still using `-lhidapi-libusb` on Linux).
 
 # v3.4.1 (2018-12-10)
 

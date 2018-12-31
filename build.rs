@@ -101,5 +101,10 @@ fn main() {
         .file(version_source)
         .compile("libnitrokey.a");
 
-    println!("cargo:rustc-link-lib=hidapi-libusb");
+    let hidapi_library_name = if cfg!(target_os = "linux") {
+        "hidapi-libusb"
+    } else {
+        "hidapi"
+    };
+    println!("cargo:rustc-link-lib={}", hidapi_library_name);
 }
