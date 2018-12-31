@@ -1,3 +1,6 @@
+# Unreleased
+- Use the -std=c++14 compiler flag.
+
 # v3.4.1 (2018-12-10)
 
 - Update to libnitrokey 3.4.1.  There are no changes affecting this crate.

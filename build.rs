@@ -95,6 +95,7 @@ fn main() {
 
     cc::Build::new()
         .cpp(true)
+        .flag("-std=c++14")
         .include(library_path.join("libnitrokey"))
         .files(sources.iter().map(|s| library_path.join(s)))
         .file(version_source)
