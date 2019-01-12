@@ -10,6 +10,11 @@ in the library search path:
 - `libhidapi-libusb0` (on Linux)
 - `libhidapi` (on non-Linux systems)
 
+If you set the `USE_SYSTEM_LIBNITROKEY` environment variable when building this
+crate, it links directly against `libnitrokey` instead of building it from
+source.  In this case, `libnitrokey` must be available in the library search
+path.
+
 ## Versioning
 
 The major and minor version of the `nitrokey-sys` crate map to the major and

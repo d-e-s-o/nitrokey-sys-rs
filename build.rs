@@ -54,6 +54,11 @@ fn prepare_version_source(
 }
 
 fn main() {
+    if env::var("USE_SYSTEM_LIBNITROKEY").is_ok() {
+        println!("cargo:rustc-link-lib=nitrokey");
+        return;
+    }
+
     let out_dir = env::var("OUT_DIR").expect("Environment variable OUT_DIR is not set");
     let out_path = path::PathBuf::from(out_dir);
 

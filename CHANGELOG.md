@@ -1,3 +1,7 @@
+# Unreleased
+- Link directly against `libnitrokey` if the `USE_SYSTEM_LIBNITROKEY`
+  environment variable is set.
+
 # v3.4.2 (2019-01-01)
 - Use the -std=c++14 compiler flag.
 - Change the build script to link to `-lhidapi` on non-Linux operating systems
