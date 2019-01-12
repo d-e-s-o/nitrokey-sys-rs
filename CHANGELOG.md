@@ -1,4 +1,4 @@
-# Unreleased
+# v3.4.3 (2019-10-12)
 - Link directly against `libnitrokey` if the `USE_SYSTEM_LIBNITROKEY`
   environment variable is set.
 
