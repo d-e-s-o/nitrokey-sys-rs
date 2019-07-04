@@ -1,4 +1,5 @@
 # Unreleased
+- Mark deprecated functions using the `deprecated` attribute.
 - Update to libnitrokey 3.5, causing all following changes.
 - New constant `NK_PWS_SLOT_COUNT`.
 - New structures:

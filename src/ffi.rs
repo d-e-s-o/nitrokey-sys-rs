@@ -759,6 +759,7 @@ extern "C" {
     /// deprecated in favor of NK_get_status_as_string.
     /// @return string representation of the status or an empty string
     /// if the command failed
+    #[deprecated(since = "3.5.0", note="use `NK_get_status_as_string` instead")]
     pub fn NK_status() -> *mut ::std::os::raw::c_char;
 }
 extern "C" {
@@ -1013,6 +1014,7 @@ extern "C" {
     pub fn NK_totp_set_time_soft(time: u64) -> ::std::os::raw::c_int;
 }
 extern "C" {
+    #[deprecated(since = "3.4.0", note="use `NK_totp_set_time_soft` instead")]
     pub fn NK_totp_get_time() -> ::std::os::raw::c_int;
 }
 extern "C" {
