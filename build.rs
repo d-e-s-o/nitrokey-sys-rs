@@ -1,9 +1,9 @@
 use std::env;
+use std::fmt;
 use std::fs;
 use std::io;
 use std::io::{Read, Write};
 use std::path;
-use std::string;
 
 use cc;
 
@@ -14,12 +14,13 @@ struct Version {
     patch: Option<u32>,
 }
 
-impl string::ToString for Version {
-    fn to_string(&self) -> String {
-        match self.patch {
-            Some(patch) => format!("v{}.{}.{}", self.major, self.minor, patch),
-            None => format!("v{}.{}", self.major, self.minor),
+impl fmt::Display for Version {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "v{}.{}", self.major, self.minor)?;
+        if let Some(patch) = self.patch {
+            write!(f, ".{}", patch)?;
         }
+        Ok(())
     }
 }
 
