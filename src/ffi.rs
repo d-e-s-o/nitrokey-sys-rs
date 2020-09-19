@@ -10,6 +10,8 @@ pub const NK_device_model_NK_DISCONNECTED: NK_device_model = 0;
 pub const NK_device_model_NK_PRO: NK_device_model = 1;
 #[doc = " Nitrokey Storage."]
 pub const NK_device_model_NK_STORAGE: NK_device_model = 2;
+#[doc = " Librem Key."]
+pub const NK_device_model_NK_LIBREM: NK_device_model = 3;
 #[doc = " The Nitrokey device models supported by the API."]
 pub type NK_device_model = ::std::os::raw::c_uint;
 #[doc = " The connection info for a Nitrokey device as a linked list."]
@@ -498,6 +500,85 @@ fn bindgen_test_layout_NK_SD_usage_data() {
         )
     );
 }
+#[doc = " The general configuration of a Nitrokey device."]
+#[repr(C)]
+#[derive(Debug, Default, Copy, Clone)]
+pub struct NK_config {
+    #[doc = " value in range [0-1] to send HOTP code from slot 'numlock' after double pressing numlock"]
+    #[doc = " or outside the range to disable this function"]
+    pub numlock: u8,
+    #[doc = " similar to numlock but with capslock"]
+    pub capslock: u8,
+    #[doc = " similar to numlock but with scrolllock"]
+    pub scrolllock: u8,
+    #[doc = " True to enable OTP PIN protection (require PIN each OTP code request)"]
+    pub enable_user_password: bool,
+    #[doc = " Unused."]
+    pub disable_user_password: bool,
+}
+#[test]
+fn bindgen_test_layout_NK_config() {
+    assert_eq!(
+        ::std::mem::size_of::<NK_config>(),
+        5usize,
+        concat!("Size of: ", stringify!(NK_config))
+    );
+    assert_eq!(
+        ::std::mem::align_of::<NK_config>(),
+        1usize,
+        concat!("Alignment of ", stringify!(NK_config))
+    );
+    assert_eq!(
+        unsafe { &(*(::std::ptr::null::<NK_config>())).numlock as *const _ as usize },
+        0usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(NK_config),
+            "::",
+            stringify!(numlock)
+        )
+    );
+    assert_eq!(
+        unsafe { &(*(::std::ptr::null::<NK_config>())).capslock as *const _ as usize },
+        1usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(NK_config),
+            "::",
+            stringify!(capslock)
+        )
+    );
+    assert_eq!(
+        unsafe { &(*(::std::ptr::null::<NK_config>())).scrolllock as *const _ as usize },
+        2usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(NK_config),
+            "::",
+            stringify!(scrolllock)
+        )
+    );
+    assert_eq!(
+        unsafe { &(*(::std::ptr::null::<NK_config>())).enable_user_password as *const _ as usize },
+        3usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(NK_config),
+            "::",
+            stringify!(enable_user_password)
+        )
+    );
+    assert_eq!(
+        unsafe { &(*(::std::ptr::null::<NK_config>())).disable_user_password as *const _ as usize },
+        4usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(NK_config),
+            "::",
+            stringify!(disable_user_password)
+        )
+    );
+}
 #[repr(C)]
 #[derive(Debug, Default, Copy, Clone)]
 pub struct NK_storage_ProductionTest {
@@ -737,7 +818,7 @@ extern "C" {
 }
 extern "C" {
     #[doc = " Connect to device of given model. Currently library can be connected only to one device at once."]
-    #[doc = " @param device_model NK_device_model: NK_PRO: Nitrokey Pro, NK_STORAGE: Nitrokey Storage"]
+    #[doc = " @param device_model NK_device_model: NK_PRO: Nitrokey Pro, NK_STORAGE: Nitrokey Storage, NK_LIBREM: Librem Key"]
     #[doc = " @return 1 if connected, 0 if wrong model or cannot connect"]
     pub fn NK_login_enum(device_model: NK_device_model) -> ::std::os::raw::c_int;
 }
@@ -786,6 +867,13 @@ extern "C" {
     #[doc = " Return the device's serial number string in hex."]
     #[doc = " @return string device's serial number in hex"]
     pub fn NK_device_serial_number() -> *mut ::std::os::raw::c_char;
+}
+extern "C" {
+    #[doc = " Return the device's serial number string as an integer.  Use"]
+    #[doc = " NK_last_command_status to check for an error if this function"]
+    #[doc = " returns zero."]
+    #[doc = " @return device's serial number as an integer"]
+    pub fn NK_device_serial_number_as_u32() -> u32;
 }
 extern "C" {
     #[doc = " Get last command processing status. Useful for commands which returns the results of their own and could not return"]
@@ -861,7 +949,18 @@ extern "C" {
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
+    #[doc = " Write general config to the device"]
+    #[doc = " @param config the configuration data"]
+    #[doc = " @param admin_temporary_password current admin temporary password"]
+    #[doc = " @return command processing error code"]
+    pub fn NK_write_config_struct(
+        config: NK_config,
+        admin_temporary_password: *const ::std::os::raw::c_char,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
     #[doc = " Get currently set config - status of function Numlock/Capslock/Scrollock OTP sending and is enabled PIN protected OTP"]
+    #[doc = " The return value must be freed using NK_free_config."]
     #[doc = " @see NK_write_config"]
     #[doc = " @return  uint8_t general_config[5]:"]
     #[doc = "            uint8_t numlock;"]
@@ -871,6 +970,19 @@ extern "C" {
     #[doc = "uint8_t delete_user_password;"]
     #[doc = ""]
     pub fn NK_read_config() -> *mut u8;
+}
+extern "C" {
+    #[doc = " Free a value returned by NK_read_config.  May be called with a NULL"]
+    #[doc = " argument."]
+    pub fn NK_free_config(config: *mut u8);
+}
+extern "C" {
+    #[doc = " Get currently set config and write it to the given pointer."]
+    #[doc = " @see NK_read_config"]
+    #[doc = " @see NK_write_config_struct"]
+    #[doc = " @param out a pointer to the struct that should be written to"]
+    #[doc = " @return command processing error code"]
+    pub fn NK_read_config_struct(out: *mut NK_config) -> ::std::os::raw::c_int;
 }
 extern "C" {
     #[doc = " Get name of given TOTP slot"]
@@ -1062,8 +1174,14 @@ extern "C" {
 }
 extern "C" {
     #[doc = " Get password safe slots' status"]
+    #[doc = " The return value must be freed using NK_free_password_safe_slot_status."]
     #[doc = " @return uint8_t[16] slot statuses - each byte represents one slot with 0 (not programmed) and 1 (programmed)"]
     pub fn NK_get_password_safe_slot_status() -> *mut u8;
+}
+extern "C" {
+    #[doc = " Free a value returned by NK_get_password_safe_slot_status.  May be"]
+    #[doc = " called with a NULL argument."]
+    pub fn NK_free_password_safe_slot_status(status: *mut u8);
 }
 extern "C" {
     #[doc = " Get password safe slot name"]
@@ -1189,6 +1307,7 @@ extern "C" {
     #[doc = " Storage only"]
     #[doc = " @param user_pin 20 characters User PIN"]
     #[doc = " @return command processing error code"]
+    #[deprecated(since = "3.6.0", note = "use `set_unencrypted_read_only_admin` instead")]
     pub fn NK_set_unencrypted_read_only(
         user_pin: *const ::std::os::raw::c_char,
     ) -> ::std::os::raw::c_int;
@@ -1202,6 +1321,7 @@ extern "C" {
     #[doc = " Storage only"]
     #[doc = " @param user_pin 20 characters User PIN"]
     #[doc = " @return command processing error code"]
+    #[deprecated(since = "3.6.0", note = "use `set_unencrypted_read_write_admin` instead")]
     pub fn NK_set_unencrypted_read_write(
         user_pin: *const ::std::os::raw::c_char,
     ) -> ::std::os::raw::c_int;

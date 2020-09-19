@@ -104,6 +104,7 @@ char * strndup(const char* str, size_t maxlen);
         stick10::GetStatus::ResponsePayload get_status();
         string get_status_as_string();
         string get_serial_number();
+        uint32_t get_serial_number_as_u32();
 
         char * get_totp_slot_name(uint8_t slot_number);
         char * get_hotp_slot_name(uint8_t slot_number);
@@ -157,6 +158,7 @@ char * strndup(const char* str, size_t maxlen);
          * Does nothing otherwise.
          * @param user_pin User PIN
          */
+        [[deprecated("Use set_unencrypted_read_only_admin instead.")]]
         void set_unencrypted_read_only(const char *user_pin);
 
         /**
@@ -173,6 +175,7 @@ char * strndup(const char* str, size_t maxlen);
          * Does nothing otherwise.
          * @param user_pin User PIN
          */
+        [[deprecated("Use set_unencrypted_read_write_admin instead")]]
         void set_unencrypted_read_write(const char *user_pin);
 
         /**
