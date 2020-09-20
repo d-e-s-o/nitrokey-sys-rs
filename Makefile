@@ -7,6 +7,7 @@ src/ffi.rs: ${LIBNITROKEY}/NK_C_API.h
 		--whitelist-function "NK_.*" \
 		--whitelist-var "NK_.*" \
 		--whitelist-var "MAXIMUM_STR_REPLY_LENGTH" \
+		--with-derive-default \
 		--output "$@" \
 		"$<" \
 		-- "-I${LIBNITROKEY}/libnitrokey"

@@ -79,9 +79,14 @@ fn bindgen_test_layout_NK_device_info() {
         )
     );
 }
+impl Default for NK_device_info {
+    fn default() -> Self {
+        unsafe { ::std::mem::zeroed() }
+    }
+}
 #[doc = " Stores the common device status for all Nitrokey devices."]
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Default, Copy, Clone)]
 pub struct NK_status {
     #[doc = " The major firmware version, e. g. 0 in v0.40."]
     pub firmware_version_major: u8,
@@ -196,7 +201,7 @@ fn bindgen_test_layout_NK_status() {
 }
 #[doc = " Stores the status of a Storage device."]
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Default, Copy, Clone)]
 pub struct NK_storage_status {
     #[doc = " Indicates whether the unencrypted volume is read-only."]
     pub unencrypted_volume_read_only: bool,
@@ -447,7 +452,7 @@ fn bindgen_test_layout_NK_storage_status() {
 }
 #[doc = " Data about the usage of the SD card."]
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Default, Copy, Clone)]
 pub struct NK_SD_usage_data {
     #[doc = " The minimum write level, as a percentage of the total card"]
     #[doc = " size."]
@@ -494,7 +499,7 @@ fn bindgen_test_layout_NK_SD_usage_data() {
     );
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Default, Copy, Clone)]
 pub struct NK_storage_ProductionTest {
     pub FirmwareVersion_au8: [u8; 2usize],
     pub FirmwareVersionInternal_u8: u8,
@@ -1416,7 +1421,7 @@ extern "C" {
     ) -> ::std::os::raw::c_int;
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Default, Copy, Clone)]
 pub struct ReadSlot_t {
     pub slot_name: [u8; 15usize],
     pub _slot_config: u8,
