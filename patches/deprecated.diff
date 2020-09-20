@@ -6,10 +6,10 @@ Index: nitrokey-sys-rs/src/ffi.rs
 ===================================================================
 --- nitrokey-sys-rs.orig/src/ffi.rs
 +++ nitrokey-sys-rs/src/ffi.rs
-@@ -763,6 +763,7 @@ extern "C" {
-     /// deprecated in favor of NK_get_status_as_string.
-     /// @return string representation of the status or an empty string
-     /// if the command failed
+@@ -762,6 +762,7 @@ extern "C" {
+     #[doc = " deprecated in favor of NK_get_status_as_string."]
+     #[doc = " @return string representation of the status or an empty string"]
+     #[doc = "         if the command failed"]
 +    #[deprecated(since = "3.5.0", note="use `NK_get_status_as_string` instead")]
      pub fn NK_status() -> *mut ::std::os::raw::c_char;
  }
