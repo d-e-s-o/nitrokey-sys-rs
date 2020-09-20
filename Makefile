@@ -11,4 +11,4 @@ src/ffi.rs: ${LIBNITROKEY}/NK_C_API.h
 		--output "$@" \
 		"$<" \
 		-- "-I${LIBNITROKEY}/libnitrokey"
-	quilt push -a
+	quilt push -a --refresh
