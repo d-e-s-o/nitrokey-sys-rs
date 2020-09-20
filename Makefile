@@ -2,6 +2,7 @@ BINDGEN ?= bindgen
 LIBNITROKEY ?= $(wildcard libnitrokey-v*)
 
 src/ffi.rs: ${LIBNITROKEY}/NK_C_API.h
+	quilt pop -af || true
 	${BINDGEN} \
 		--whitelist-function "NK_.*" \
 		--whitelist-var "NK_.*" \
@@ -9,3 +10,4 @@ src/ffi.rs: ${LIBNITROKEY}/NK_C_API.h
 		--output "$@" \
 		"$<" \
 		-- "-I${LIBNITROKEY}/libnitrokey"
+	quilt push -a
