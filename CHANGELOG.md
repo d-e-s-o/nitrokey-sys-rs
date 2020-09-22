@@ -3,6 +3,8 @@
 - Implement `std::fmt::Display` instead of `std::string::ToString` for the
   `Version` enum in `build.rs`.
 - Do not include layout tests in the generated bindings.
+- Add `bindgen` feature that re-generates the bindings during the build,
+  including layout tests.
 - Update to libnitrokey 3.6, causing all following changes.
 - New constants:
   - `NK_device_model_NK_LIBREM` (`NK_device_model` enum)

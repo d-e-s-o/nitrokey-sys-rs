@@ -2,9 +2,14 @@
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
 
+#[cfg(not(feature = "bindgen"))]
 mod ffi;
 
+#[cfg(not(feature = "bindgen"))]
 pub use crate::ffi::*;
+
+#[cfg(feature = "bindgen")]
+include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 
 #[cfg(test)]
 mod tests {

@@ -15,6 +15,13 @@ crate, it links directly against `libnitrokey` instead of building it from
 source.  In this case, `libnitrokey` must be available in the library search
 path.
 
+Per default, this crate uses bindings that have been generated using Rust’s
+`x86_64-unknown-linux-gnu` target.  To the best of our knowledge, these
+bindings are platform-independent.  If you want to generate the bindings,
+including layout tests, specifically for your platform during the build,
+activate the `bindgen` feature.  In this case, you will also need `clang` and
+`libclang` in the default search path.
+
 ## Versioning
 
 The major and minor version of the `nitrokey-sys` crate map to the major and
