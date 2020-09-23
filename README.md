@@ -33,15 +33,24 @@ The major and minor version of the `nitrokey-sys` crate map to the major and
 minor version of `libnitrokey`.  The `nitrokey-sys` patch version may be
 increased independently.
 
+## Contributing
+
+Contributions to this project are welcome!  Please submit patches to the
+mailing list [~ireas/nitrokey-rs-dev@lists.sr.ht][] ([archive][]) using the
+`[PATCH nitrokey-sys-rs]` subject prefix.  For more information, see the
+[Contributing Guide][].
+
 ## Contact
 
 For bug reports, patches, feature requests or other messages, please send a
-mail to [nitrokey-rs-dev@ireas.org][].
+mail to the mailing list [~ireas/nitrokey-rs-dev@lists.sr.ht][] ([archive][]).
 
 ## License
 
 This project as well as `libnitrokey` are licensed under the [LGPL-3.0][].
 
 [`libnitrokey`]: https://github.com/nitrokey/libnitrokey
-[nitrokey-rs-dev@ireas.org]: mailto:nitrokey-rs-dev@ireas.org
+[~ireas/nitrokey-rs-dev@lists.sr.ht]: mailto:~ireas/nitrokey-rs-dev@lists.sr.ht
+[archive]: https://lists.sr.ht/~ireas/nitrokey-rs-dev
+[Contributing Guide]: https://man.sr.ht/~ireas/guides/contributing.md
 [LGPL-3.0]: https://opensource.org/licenses/lgpl-3.0.html
