@@ -27,8 +27,9 @@ mod tests {
     fn login() {
         unsafe {
             // Unconnected
-            assert_eq!(0, NK_login(CString::new("S").unwrap().as_ptr()));
+            assert_eq!(0, NK_login(CString::new("L").unwrap().as_ptr()));
             assert_eq!(0, NK_login(CString::new("P").unwrap().as_ptr()));
+            assert_eq!(0, NK_login(CString::new("S").unwrap().as_ptr()));
             // Unsupported model
             assert_eq!(0, NK_login(CString::new("T").unwrap().as_ptr()));
         }
