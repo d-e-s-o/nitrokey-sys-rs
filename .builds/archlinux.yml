@@ -1,0 +1,36 @@
+# Copyright (C) 2020 Robin Krahl <robin.krahl@ireas.org>
+# SPDX-License-Identifier: CC0-1.0
+image: archlinux
+packages:
+  - clang
+  - gcc
+  - gnupg
+  - hidapi
+  - rust
+sources:
+  - https://git.sr.ht/~ireas/nitrokey-sys-rs
+tasks:
+  - version: |
+      rustc -V
+  - verify: |
+      cd nitrokey-sys-rs
+      curl -s "https://pgp.ireas.org/0x6D533958F070C57C.txt" | gpg --import
+      git verify-commit HEAD || [ `git config user.email` == "builds@sr.ht" ]
+  - build: |
+      cd nitrokey-sys-rs
+      cargo build --release
+      cargo build --release --features bindgen
+  - test: |
+      cd nitrokey-sys-rs
+      cargo test
+      cargo test --features bindgen
+  - clippy: |
+      cd nitrokey-sys-rs
+      cargo clippy -- -D warnings
+  - format: |
+      cd nitrokey-sys-rs
+      cargo fmt -- --check
+triggers:
+  - action: email
+    condition: failure
+    to: robin.krahl@ireas.org
