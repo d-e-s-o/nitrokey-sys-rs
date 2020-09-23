@@ -22,6 +22,11 @@ including layout tests, specifically for your platform during the build,
 activate the `bindgen` feature.  In this case, you will also need `clang` and
 `libclang` in the default search path.
 
+Alternatively, you can execute `make verify-bindings` to compare the
+pre-generated bindings with the bindings that `bindgen` generates for your
+platform.  This check only works on a clean Git working tree and requires the
+`bindgen` binary, `git` and `quilt`.
+
 ## Versioning
 
 The major and minor version of the `nitrokey-sys` crate map to the major and

@@ -14,3 +14,12 @@ src/ffi.rs: ${LIBNITROKEY}/NK_C_API.h
 		"$<" \
 		-- "-I${LIBNITROKEY}/libnitrokey"
 	quilt push -a --refresh
+
+.PHONY: verify-bindings
+verify-bindings:
+	@git diff --exit-code src/ffi.rs || \
+		(echo "This test can only be executed on a clean working tree"; exit 1)
+	@$(MAKE) --always-make src/ffi.rs > /dev/null
+	@git diff --exit-code src/ffi.rs && \
+		(echo "The generated bindings have been verified successfully!") || \
+		(echo "Error: The generated bindings differ from the pre-generated bindings!"; exit 1)
