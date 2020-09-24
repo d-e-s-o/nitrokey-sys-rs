@@ -1,9 +1,9 @@
 use std::env;
+use std::fmt;
 use std::fs;
 use std::io;
 use std::io::{Read, Write};
 use std::path;
-use std::string;
 
 use cc;
 
@@ -14,18 +14,19 @@ struct Version {
     patch: Option<u32>,
 }
 
-impl string::ToString for Version {
-    fn to_string(&self) -> String {
-        match self.patch {
-            Some(patch) => format!("v{}.{}.{}", self.major, self.minor, patch),
-            None => format!("v{}.{}", self.major, self.minor),
+impl fmt::Display for Version {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "v{}.{}", self.major, self.minor)?;
+        if let Some(patch) = self.patch {
+            write!(f, ".{}", patch)?;
         }
+        Ok(())
     }
 }
 
 const LIBNITROKEY_VERSION: Version = Version {
     major: 3,
-    minor: 5,
+    minor: 6,
     patch: None,
 };
 
@@ -53,6 +54,35 @@ fn prepare_version_source(
     Ok(out)
 }
 
+#[cfg(feature = "bindgen")]
+fn generate_bindings(library_path: &path::Path, out_path: &path::Path) {
+    let header_path = library_path.join("NK_C_API.h");
+    let header_str = header_path
+        .to_str()
+        .expect("Header path contains invalid UTF-8");
+
+    let include_path = library_path.join("libnitrokey");
+    let include_str = include_path
+        .to_str()
+        .expect("Include path contains invalid UTF-8");
+
+    println!("cargo:rerun-if-changed={}", header_str);
+
+    // always keep options in sync with Makefile
+    let bindings = bindgen::Builder::default()
+        .header(header_str)
+        .whitelist_function("NK_.*")
+        .whitelist_var("NK_.*")
+        .whitelist_var("MAXIMUM_STR_REPLY_LENGTH")
+        .derive_default(true)
+        .clang_arg(&format!("-I{}", include_str))
+        .generate()
+        .expect("Unable to generate bindings");
+    bindings
+        .write_to_file(out_path.join("bindings.rs"))
+        .expect("Could not write bindings");
+}
+
 fn main() {
     if env::var("USE_SYSTEM_LIBNITROKEY").is_ok() {
         println!("cargo:rustc-link-lib=nitrokey");
@@ -76,6 +106,9 @@ fn main() {
 
     let version_source = prepare_version_source(LIBNITROKEY_VERSION, &out_path, &library_path)
         .expect("Could not prepare the version source file");
+
+    #[cfg(feature = "bindgen")]
+    generate_bindings(library_path, &out_path);
 
     cc::Build::new()
         .cpp(true)
