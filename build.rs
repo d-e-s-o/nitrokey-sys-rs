@@ -26,7 +26,7 @@ impl fmt::Display for Version {
 
 const LIBNITROKEY_VERSION: Version = Version {
     major: 3,
-    minor: 6,
+    minor: 7,
     patch: None,
 };
 

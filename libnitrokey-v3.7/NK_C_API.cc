@@ -426,6 +426,14 @@ extern "C" {
 		m->set_loglevel(level);
 	}
 
+	NK_C_API void NK_set_log_function(NK_log_function fn) {
+		auto m = NitrokeyManager::instance();
+		std::function<void(const std::string&, Loglevel)> log_function = [fn](auto s, auto lvl) {
+		    fn(static_cast<int>(lvl), s.c_str());
+		};
+		m->set_log_function_raw(log_function);
+        }
+
 	NK_C_API unsigned int NK_get_major_library_version() {
 		return get_major_library_version();
 	}
@@ -929,6 +937,20 @@ NK_C_API char* NK_get_SD_usage_data_as_string() {
     });
   }
 
+  NK_C_API int NK_get_random(const uint8_t len, struct GetRandom_t *out){
+    if (out == nullptr) return -1;
+    auto m = NitrokeyManager::instance();
+    auto result = get_with_status([&]() {
+            return m->get_random_pro(len);
+        }, stick10::GetRandom::ResponsePayload());
+    auto error_code = std::get<0>(result);
+    if (error_code != 0) {
+        return error_code;
+    }
+    auto data = std::get<1>(result);
+    memmove(out, reinterpret_cast<void *>(&data), sizeof(struct GetRandom_t));
+    return 0;
+  }
 
   NK_C_API int NK_read_HOTP_slot(const uint8_t slot_num, struct ReadSlot_t* out){
   if (out == nullptr)

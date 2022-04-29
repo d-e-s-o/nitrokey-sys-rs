@@ -234,6 +234,7 @@ namespace {
     auto pInfo_ = pInfo;
     while (pInfo != nullptr){
       if (pInfo->path == nullptr || pInfo->serial_number == nullptr) {
+      pInfo = pInfo->next;
       continue;
     }
     auto deviceModel = product_id_to_model(vendor_id, pInfo->product_id);
@@ -328,7 +329,7 @@ void Device::set_retry_delay(const std::chrono::milliseconds delay){
 }
 
 Stick10::Stick10():
-  Device(NITROKEY_VID, NITROKEY_PRO_PID, DeviceModel::PRO, 100ms, 5, 100ms)
+  Device(NITROKEY_VID, NITROKEY_PRO_PID, DeviceModel::PRO, 100ms, 15, 100ms)
   {
     setDefaultDelay();
   }
@@ -342,7 +343,7 @@ Stick20::Stick20():
 
 
 LibremKey::LibremKey():
-  Device(PURISM_VID, LIBREM_KEY_PID, DeviceModel::LIBREM, 100ms, 5, 100ms)
+  Device(PURISM_VID, LIBREM_KEY_PID, DeviceModel::LIBREM, 100ms, 15, 100ms)
   {
     setDefaultDelay();
   }
@@ -353,6 +354,10 @@ std::string Device::ErrorCounters::get_as_string() {
 #ifdef NO_LOG
   return "";
 #endif
+
+  if (total_comm_runs == 0) {
+      return "Statistics: no connection run";
+  }
 
   std::stringstream ss;
   p(total_comm_runs);
