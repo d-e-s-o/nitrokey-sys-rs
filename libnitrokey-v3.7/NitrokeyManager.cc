@@ -217,44 +217,44 @@ using nitrokey::misc::strcpyT;
             }
         }
 
-	auto vendor_id = NITROKEY_VID;
-        auto info_ptr = hid_enumerate(vendor_id, 0);
-	if (!info_ptr) {
-	  vendor_id = PURISM_VID;
-	  info_ptr = hid_enumerate(vendor_id, 0);
-	}
-        auto first_info_ptr = info_ptr;
-        if (!info_ptr)
-          return false;
+        auto vendor_ids = { NITROKEY_VID, PURISM_VID };
+        for (auto vendor_id : vendor_ids) {
+          auto info_ptr = hid_enumerate(vendor_id, 0);
+          if (!info_ptr) {
+            continue;
+          }
+          auto first_info_ptr = info_ptr;
 
-        misc::Option<DeviceModel> model;
-        while (info_ptr && !model.has_value()) {
-            if (path == std::string(info_ptr->path)) {
-                model = product_id_to_model(info_ptr->vendor_id, info_ptr->product_id);
-            }
-            info_ptr = info_ptr->next;
+          misc::Option<DeviceModel> model;
+          while (info_ptr && !model.has_value()) {
+              if (path == std::string(info_ptr->path)) {
+                  model = product_id_to_model(info_ptr->vendor_id, info_ptr->product_id);
+              }
+              info_ptr = info_ptr->next;
+          }
+          hid_free_enumeration(first_info_ptr);
+
+          if (!model.has_value())
+            continue;
+
+          auto p = Device::create(model.value());
+          if (!p)
+            continue;
+          p->set_path(path);
+
+          if(!p->connect()) continue;
+
+          if(cache_connections){
+              connected_devices [path] = p;
+          }
+
+          device = p; //previous device will be disconnected automatically
+          current_device_id = path;
+          nitrokey::log::Log::setPrefix(path);
+          LOGD1("Device successfully changed");
+          return true;
         }
-        hid_free_enumeration(first_info_ptr);
-
-        if (!model.has_value())
-            return false;
-
-        auto p = Device::create(model.value());
-        if (!p)
-            return false;
-        p->set_path(path);
-
-        if(!p->connect()) return false;
-
-        if(cache_connections){
-            connected_devices [path] = p;
-        }
-
-        device = p; //previous device will be disconnected automatically
-        current_device_id = path;
-        nitrokey::log::Log::setPrefix(path);
-        LOGD1("Device successfully changed");
-        return true;
+        return false;
     }
 
     bool NitrokeyManager::connect() {
@@ -273,7 +273,14 @@ using nitrokey::misc::strcpyT;
 
 
     void NitrokeyManager::set_log_function(std::function<void(std::string)> log_function){
+      // FIXME use move and pass to log handler, instead of keeping here static variable
       static nitrokey::log::FunctionalLogHandler handler(log_function);
+      nitrokey::log::Log::instance().set_handler(&handler);
+    }
+
+    void NitrokeyManager::set_log_function_raw(std::function<void(const std::string&, Loglevel)> log_function) {
+      // FIXME use move and pass to log handler, instead of keeping here static variable
+      static nitrokey::log::RawFunctionalLogHandler handler(log_function);
       nitrokey::log::Log::instance().set_handler(&handler);
     }
 
@@ -571,6 +578,7 @@ using nitrokey::misc::strcpyT;
     void NitrokeyManager::write_HOTP_slot_authorize(uint8_t slot_number, const char *slot_name, const char *secret,
                                                     uint64_t hotp_counter, bool use_8_digits, bool use_enter,
                                                     bool use_tokenID, const char *token_ID, const char *temporary_password) {
+      if (device == nullptr) { throw DeviceNotConnected("device not connected"); }
       auto payload = get_payload<WriteToHOTPSlot>();
       payload.slot_number = slot_number;
       auto secret_bin = misc::hex_string_to_byte(secret);
@@ -739,6 +747,7 @@ using nitrokey::misc::strcpyT;
 
     template <typename ProCommand, PasswordKind StoKind>
     void NitrokeyManager::change_PIN_general(const char *current_PIN, const char *new_PIN) {
+        if (device == nullptr) { throw DeviceNotConnected("device not connected"); }
         switch (device->get_device_model()){
             case DeviceModel::LIBREM:
             case DeviceModel::PRO:
@@ -786,6 +795,7 @@ using nitrokey::misc::strcpyT;
     }
 
     uint8_t NitrokeyManager::get_user_retry_count() {
+        if (device == nullptr) { throw DeviceNotConnected("device not connected"); }
         if(device->get_device_model() == DeviceModel::STORAGE){
           stick20::GetDeviceStatus::CommandTransaction::run(device);
         }
@@ -794,6 +804,7 @@ using nitrokey::misc::strcpyT;
     }
 
     uint8_t NitrokeyManager::get_admin_retry_count() {
+        if (device == nullptr) { throw DeviceNotConnected("device not connected"); }
         if(device->get_device_model() == DeviceModel::STORAGE){
           stick20::GetDeviceStatus::CommandTransaction::run(device);
         }
@@ -861,6 +872,7 @@ using nitrokey::misc::strcpyT;
     }
 
     void NitrokeyManager::build_aes_key(const char *admin_password) {
+        if (device == nullptr) { throw DeviceNotConnected("device not connected"); }
         switch (device->get_device_model()) {
             case DeviceModel::LIBREM:
             case DeviceModel::PRO: {
@@ -886,6 +898,7 @@ using nitrokey::misc::strcpyT;
     }
 
     void NitrokeyManager::unlock_user_password(const char *admin_password, const char *new_user_password) {
+      if (device == nullptr) { throw DeviceNotConnected("device not connected"); }
       switch (device->get_device_model()){
         case DeviceModel::LIBREM:
         case DeviceModel::PRO: {
@@ -934,6 +947,7 @@ using nitrokey::misc::strcpyT;
     }
 
     bool NitrokeyManager::is_authorization_command_supported(){
+        if (device == nullptr) { throw DeviceNotConnected("device not connected"); }
       //authorization command is supported for versions equal or below:
         auto m = std::unordered_map<DeviceModel , int, EnumClassHash>({
                                                {DeviceModel::PRO, 7},
@@ -944,6 +958,7 @@ using nitrokey::misc::strcpyT;
     }
 
     bool NitrokeyManager::is_320_OTP_secret_supported(){
+        if (device == nullptr) { throw DeviceNotConnected("device not connected"); }
         // 320 bit OTP secret is supported by version bigger or equal to:
         auto m = std::unordered_map<DeviceModel , int, EnumClassHash>({
                                                {DeviceModel::PRO, 8},
@@ -971,6 +986,7 @@ using nitrokey::misc::strcpyT;
     }
 
     uint8_t NitrokeyManager::get_minor_firmware_version(){
+      if (device == nullptr) { throw DeviceNotConnected("device not connected"); }
       switch(device->get_device_model()){
         case DeviceModel::LIBREM:
         case DeviceModel::PRO:{
@@ -988,6 +1004,7 @@ using nitrokey::misc::strcpyT;
       return 0;
     }
     uint8_t NitrokeyManager::get_major_firmware_version(){
+      if (device == nullptr) { throw DeviceNotConnected("device not connected"); }
       switch(device->get_device_model()){
         case DeviceModel::LIBREM:
         case DeviceModel::PRO:{
@@ -1163,6 +1180,7 @@ using nitrokey::misc::strcpyT;
    * @return ReadSlot structure
    */
   stick10::ReadSlot::ResponsePayload NitrokeyManager::get_OTP_slot_data(const uint8_t slot_number) {
+    if (device == nullptr) { throw DeviceNotConnected("device not connected"); }
     auto p = get_payload<stick10::ReadSlot>();
     p.slot_number = slot_number;
     p.data_format = stick10::ReadSlot::CounterFormat::BINARY; // ignored for devices other than Storage v0.54+
@@ -1220,6 +1238,13 @@ using nitrokey::misc::strcpyT;
     auto p = get_payload<FirmwareUpdate>();
     strcpyT(p.firmware_password, firmware_pin);
     FirmwareUpdate::CommandTransaction::run(device, p);
+  }
+
+  GetRandom::ResponsePayload NitrokeyManager::get_random_pro(uint8_t size_requested) {
+    auto p = get_payload<GetRandom>();
+    p.size_requested = size_requested;
+    auto data = GetRandom::CommandTransaction::run(device, p);
+    return data.data();
   }
 
   void

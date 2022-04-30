@@ -5,8 +5,6 @@ use std::io;
 use std::io::{Read, Write};
 use std::path;
 
-use cc;
-
 #[derive(Clone, Copy, Debug, PartialEq)]
 struct Version {
     major: u32,
@@ -26,7 +24,7 @@ impl fmt::Display for Version {
 
 const LIBNITROKEY_VERSION: Version = Version {
     major: 3,
-    minor: 6,
+    minor: 7,
     patch: None,
 };
 
@@ -101,10 +99,10 @@ fn main() {
         "log.cc",
         "misc.cc",
     ];
-    let library_dir = format!("libnitrokey-{}", LIBNITROKEY_VERSION.to_string());
+    let library_dir = format!("libnitrokey-{}", LIBNITROKEY_VERSION);
     let library_path = path::Path::new(&library_dir);
 
-    let version_source = prepare_version_source(LIBNITROKEY_VERSION, &out_path, &library_path)
+    let version_source = prepare_version_source(LIBNITROKEY_VERSION, &out_path, library_path)
         .expect("Could not prepare the version source file");
 
     #[cfg(feature = "bindgen")]

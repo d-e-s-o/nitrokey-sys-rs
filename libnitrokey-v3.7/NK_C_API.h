@@ -41,7 +41,7 @@
  * \mainpage
  *
  * **libnitrokey** provides access to Nitrokey Pro and Nitrokey Storage devices.
- * This documentation describes libnitrokey’s C API.  For a list of the
+ * This documentation describes libnitrokey's C API.  For a list of the
  * available functions, see the NK_C_API.h file.
  *
  * \section getting_started Example
@@ -329,6 +329,21 @@ extern "C" {
 	 * @param level (int) 0-lowest verbosity, 5-highest verbosity
 	 */
 	NK_C_API void NK_set_debug_level(const int level);
+
+	/**
+	 * Callback function for NK_set_log_function.  The first argument is
+	 * the log level (0 = Error, 1 = Warn, 2 = Info, 3 = DebugL1,
+	 * 4 = Debug, 5 = DebugL2) and the second argument is the log message.
+	 */
+    NK_C_API typedef void (*NK_log_function)(int, const char*);
+
+	/**
+	 * Set a custom log function.
+	 *
+	 * The log function is called for every log message that matches the
+	 * log level settings (see NK_set_debug and NK_set_debug_level).
+	 */
+	NK_C_API void NK_set_log_function(NK_log_function fn);
 
 	/**
 	 * Get the major library version, e. g. the 3 in v3.2.
@@ -974,7 +989,7 @@ extern "C" {
 	/**
 	 * Get SD card usage attributes. Usable during hidden volumes creation.
 	 * If the command was successful (return value 0), the usage data is
-	 * written to the output pointer’s target.  The output pointer must
+	 * written to the output pointer's target.  The output pointer must
 	 * not be null.
 	 * Storage only
 	 * @param out the output pointer for the usage data
@@ -1080,6 +1095,13 @@ struct ReadSlot_t {
   uint64_t slot_counter;
 };
 
+struct GetRandom_t {
+    uint8_t op_success;
+    uint8_t size_effective;
+    uint8_t data[51];
+};
+
+NK_C_API int NK_get_random(const uint8_t len, struct GetRandom_t *out);
 
 NK_C_API int NK_read_HOTP_slot(const uint8_t slot_num, struct ReadSlot_t* out);
 

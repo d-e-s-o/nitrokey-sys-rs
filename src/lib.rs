@@ -25,13 +25,17 @@ mod tests {
 
     #[test]
     fn login() {
+        let l = CString::new("L").unwrap();
+        let p = CString::new("P").unwrap();
+        let s = CString::new("S").unwrap();
+        let t = CString::new("T").unwrap();
         unsafe {
             // Unconnected
-            assert_eq!(0, NK_login(CString::new("L").unwrap().as_ptr()));
-            assert_eq!(0, NK_login(CString::new("P").unwrap().as_ptr()));
-            assert_eq!(0, NK_login(CString::new("S").unwrap().as_ptr()));
+            assert_eq!(0, NK_login(l.as_ptr()));
+            assert_eq!(0, NK_login(p.as_ptr()));
+            assert_eq!(0, NK_login(s.as_ptr()));
             // Unsupported model
-            assert_eq!(0, NK_login(CString::new("T").unwrap().as_ptr()));
+            assert_eq!(0, NK_login(t.as_ptr()));
         }
     }
 }

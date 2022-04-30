@@ -1,5 +1,5 @@
 [![Build Status](https://travis-ci.org/Nitrokey/libnitrokey.svg?branch=master)](https://travis-ci.org/Nitrokey/libnitrokey)
-[![Waffle.io - Columns and their card count](https://badge.waffle.io/Nitrokey/libnitrokey.svg?columns=ready,in%20progress,test,waiting%20for%20feedback)](https://waffle.io/Nitrokey/libnitrokey)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FNitrokey%2Flibnitrokey.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2FNitrokey%2Flibnitrokey?ref=badge_shield)
 
 # libnitrokey
 libnitrokey is a project to communicate with Nitrokey Pro and Storage devices in a clean and easy manner. Written in C++14, testable with `py.test` and `Catch` frameworks, with C API, Python access (through CFFI and C API, in future with Pybind11).
@@ -8,7 +8,7 @@ The development of this project is aimed to make it itself a living documentatio
 
 A C++14 complying compiler is required due to heavy use of variable templates. For feature support tables please check [table 1](https://gcc.gnu.org/projects/cxx-status.html#cxx14) or [table 2](http://en.cppreference.com/w/cpp/compiler_support).
 
-libnitrokey is developed and tested with the latest compilers: g++ 6.2, clang 3.8. We use Travis CI to test builds also on g++ 5.4 and under OSX compilers starting up from xcode 8.2 environment. 
+libnitrokey is developed and tested with a variety of compilers, starting from g++ 6.2 and clang 3.8. We use Travis CI to test builds also on g++ 5.4 and under OSX compilers starting up from xcode 9 environment. 
 
 ## Getting sources
 This repository uses `git submodules`.
@@ -93,6 +93,11 @@ pip3 install cffi # for python 3.x
 ```
 ## Python2
 Just import it, read the C API header and it is done! You have access to the library. Here is an example (in Python 2) printing HOTP code for Pro or Storage device, assuming it is run in root directory [(full example)](python_bindings_example.py):
+
+<details>
+    <summary>Code snippet (click to show)</summary>
+
+
 ```python
 #!/usr/bin/env python2
 import cffi
@@ -159,11 +164,19 @@ print('Getting HOTP code from Nitrokey device: ')
 print(hotp_slot_code)
 libnitrokey.NK_logout()  # disconnect device
 ```
+
+</details>
+
 In case  no devices are connected, a friendly message will be printed.
 All available functions for C and Python are listed in [NK_C_API.h](NK_C_API.h). Please check `Documentation` section below.
 
 ## Python3
 Just import it, read the C API header and it is done! You have access to the library. Here is an example (in Python 3) printing HOTP code for Pro or Storage device, assuming it is run in root directory [(full example)](python3_bindings_example.py):
+
+<details>
+    <summary>Code snippet (click to show)</summary>
+
+
 ```python
 #!/usr/bin/env python3
 import cffi
@@ -242,6 +255,8 @@ print(ffi.string(hotp_slot_code).decode('ascii'))
 libnitrokey.NK_logout()  # disconnect device
 ```
 
+</details>
+
 In case  no devices are connected, a friendly message will be printed.
 All available functions for C and Python are listed in [NK_C_API.h](NK_C_API.h). Please check `Documentation` section below.
 
@@ -280,6 +295,10 @@ For additional documentation please check the following for [py.test installatio
 
 ## C++ tests
 There are also some unit tests implemented in C++, placed in unittest directory. The only user-data safe online test set here is [test_safe.cpp](https://github.com/Nitrokey/libnitrokey/blob/master/unittest/test_safe.cpp), which tries to connect to the device, and collect its status data. Example run for Storage:
+
+<details>
+    <summary>Log (click to show)</summary>
+
 ```text
 # Storage device inserted, firmware version v0.53
 $ ./test_safe
@@ -340,6 +359,10 @@ $ ./test_safe
 ===============================================================================
 All tests passed (18 assertions in 6 test cases)
 ```
+
+</details>
+
+
 Test's execution configuration and verbosity could be manipulated - please see `./test_safe --help` for details.
 
 The other tests sets are not written as extensively as Python tests and are rather more a C++ low level interface check used during the library development, using either low-level components, C API from `NK_C_API.cc`, or C++ API from `NitrokeyManager.cc`. Some of them are: [test_HOTP.cc](https://github.com/Nitrokey/libnitrokey/blob/master/unittest/test_HOTP.cc),

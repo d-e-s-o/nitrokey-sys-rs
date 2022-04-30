@@ -211,7 +211,7 @@ char * strndup(const char* str, size_t maxlen);
 
         int get_progress_bar_value();
 
-        ~NitrokeyManager();
+        virtual ~NitrokeyManager();
         bool is_authorization_command_supported();
         bool is_320_OTP_secret_supported();
 
@@ -222,6 +222,7 @@ char * strndup(const char* str, size_t maxlen);
 
         explicit NitrokeyManager();
         void set_log_function(std::function<void(std::string)> log_function);
+        void set_log_function_raw(std::function<void(const std::string&, Loglevel)> log_function);
     private:
 
         static shared_ptr <NitrokeyManager> _instance;
@@ -303,6 +304,8 @@ char * strndup(const char* str, size_t maxlen);
 
       void change_firmware_update_password_pro(const char *firmware_pin_current, const char *firmware_pin_new);
       bool is_internal_hotp_slot_number(uint8_t slot_number) const;
+
+        GetRandom::ResponsePayload get_random_pro(uint8_t size_requested);
     };
 }
 
