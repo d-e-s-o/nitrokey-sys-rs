@@ -1,4 +1,4 @@
-# Unreleased
+# v3.7.0 (2022-04-30)
 - Update to libnitrokey 3.7, causing all following changes.
 - New functions:
   - `NK_get_random`
