@@ -6,6 +6,7 @@ packages:
   - gcc
   - gnupg
   - hidapi
+  - libusb
   - rust
 sources:
   - https://git.sr.ht/~ireas/nitrokey-sys-rs
